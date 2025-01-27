@@ -693,7 +693,7 @@ def main():
 
             print("Starting...")
             frame_h, frame_w = full_frames[0].shape[:-1]
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            fourcc = cv2.VideoWriter_fourcc(*"XVID")
             out = cv2.VideoWriter("temp/result.mp4", fourcc, fps, (frame_w, frame_h))
 
         img_batch = torch.FloatTensor(np.transpose(img_batch, (0, 3, 1, 2))).to(device)
@@ -731,30 +731,31 @@ def main():
 
             if not g_colab:
                 # Display the frame
-                if preview_window == "Face":
-                    cv2.imshow("face preview - press Q to abort", p)
-                elif preview_window == "Full":
-                    cv2.imshow("full preview - press Q to abort", f)
-                elif preview_window == "Both":
-                    cv2.imshow("face preview - press Q to abort", p)
-                    cv2.imshow("full preview - press Q to abort", f)
+                # if preview_window == "Face":
+                #     cv2.imshow("face preview - press Q to abort", p)
+                # elif preview_window == "Full":
+                #     cv2.imshow("full preview - press Q to abort", f)
+                # elif preview_window == "Both":
+                #     cv2.imshow("face preview - press Q to abort", p)
+                #     cv2.imshow("full preview - press Q to abort", f)
 
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q'):
-                    exit()  # Exit the loop when 'Q' is pressed
+                # key = cv2.waitKey(1) & 0xFF
+                pass
+                # if key == ord('q'):
+                #     exit()  # Exit the loop when 'Q' is pressed
 
-            if str(args.preview_settings) == "True":
-                cv2.imwrite("temp/preview.jpg", f)
-                if not g_colab:
-                    cv2.imshow("preview - press Q to close", f)
-                    if cv2.waitKey(-1) & 0xFF == ord('q'):
-                        exit()  # Exit the loop when 'Q' is pressed
+            # if str(args.preview_settings) == "True":
+            #     cv2.imwrite("temp/preview.jpg", f)
+            #     if not g_colab:
+            #         cv2.imshow("preview - press Q to close", f)
+            #         if cv2.waitKey(-1) & 0xFF == ord('q'):
+            #             exit()  # Exit the loop when 'Q' is pressed
 
             else:
                 out.write(f)
 
     # Close the window(s) when done
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
     out.release()
 

@@ -106,7 +106,7 @@ def load_model(path):
         new_s[k.replace("module.", "")] = v
     model.load_state_dict(new_s)
 
-    model = model.to(device)
+    # model = model.to(device)
     # Save results to file
     with open(results_file, "wb") as f:
         pickle.dump(model.eval(), f)

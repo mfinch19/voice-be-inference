@@ -1,15 +1,11 @@
-import os
-import sys
-import subprocess
-import uuid
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi.responses import StreamingResponse
 from pathlib import Path
+import os
+import uuid
+import subprocess
 from run import run_inference
-from fastapi import HTTPException
 
-
-# Create FastAPI instance
 app = FastAPI()
 
 # Temporary upload directory (ECS containers use /tmp for storage)
@@ -17,39 +13,35 @@ UPLOAD_DIR = Path("/tmp/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @app.post("/process/")
-async def process_video(face: UploadFile = File(...), audio: UploadFile = File(...)):
+async def process_video(
+    face: str = Form(...),  # Get `face` as a string from form-data
+    audio: UploadFile = File(...)
+):
     """
-    FastAPI endpoint to process Wav2Lip.
+    FastAPI endpoint to process video.
 
-    - Accepts uploaded `face` (video file) and `audio` (audio file).
-    - Calls `run.py` to generate lip-synced output.
-    - Returns the processed video file for the client to download.
-
-    **Example Request:**
-    ```bash
-    curl -X 'POST' 'http://localhost:8080/process/' \
-         -F 'face=@face.mp4' \
-         -F 'audio=@audio.wav' \
-         -o output.mp4
-    ```
+    - `face`: The filename (string) of the video in the "videos/" directory.
+    - `audio`: The uploaded audio file.
     """
+    
+    # Construct the file path
+    face_path = Path(f"videos/{face}.mp4")
 
-    # Generate unique file names
-    face_path = UPLOAD_DIR / f"{uuid.uuid4()}.mp4"
+    if not face_path.exists():
+        raise HTTPException(status_code=400, detail=f"Face video '{face_path}' not found.")
+
+    # Generate unique filename for the uploaded audio
     audio_path = UPLOAD_DIR / f"{uuid.uuid4()}.wav"
 
-    # Save uploaded files
-    with open(face_path, "wb") as f:
-        f.write(await face.read())
-
+    # Save uploaded audio file
     with open(audio_path, "wb") as f:
         f.write(await audio.read())
 
     # Call run.py to process video & audio
     try:
-        result_path = run_inference(video_file=face_path, vocal_file=audio_path, quality='Fast')
+        result_path = run_inference(video_file=face_path, vocal_file=audio_path, quality='Improved')
         print('inference result path:', result_path)
-        
+
         if not result_path or not os.path.exists(result_path):
             raise HTTPException(status_code=500, detail="Processing failed, output file not found.")
 
@@ -61,12 +53,9 @@ async def process_video(face: UploadFile = File(...), audio: UploadFile = File(.
         )
 
     except subprocess.CalledProcessError as e:
-        return {
-            "error": "Processing failed",
-            "details": e.stderr
-        }
+        return {"error": "Processing failed", "details": e.stderr}
 
-# Health check endpoint (for ECS status monitoring)
+# Health check endpoint
 @app.get("/")
 def health_check():
     return {"status": "running"}
