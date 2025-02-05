@@ -5,14 +5,26 @@ import os
 import uuid
 import subprocess
 from run import run_inference
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Temporary upload directory (ECS containers use /tmp for storage)
 UPLOAD_DIR = Path("/tmp/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-@app.post("/process/")
+
+
+@app.post("/process")
 async def process_video(
     face: str = Form(...),  # Get `face` as a string from form-data
     audio: UploadFile = File(...)
@@ -39,17 +51,25 @@ async def process_video(
 
     # Call run.py to process video & audio
     try:
-        result_path = run_inference(video_file=face_path, vocal_file=audio_path, quality='Improved')
+        result_path = run_inference(
+            video_file=face_path,
+            vocal_file=audio_path,
+            quality='Improved'
+        )
         print('inference result path:', result_path)
 
         if not result_path or not os.path.exists(result_path):
-            raise HTTPException(status_code=500, detail="Processing failed, output file not found.")
+            err = "Processing failed, output file not found."
+            raise HTTPException(status_code=500, detail=err)
 
         # Stream video file back to client
+        headers = {
+            "Content-Disposition": f"attachment; filename=processed_video.mp4"
+        }
         return StreamingResponse(
             open(result_path, "rb"),
             media_type="video/mp4",
-            headers={"Content-Disposition": f"attachment; filename=processed_video.mp4"}
+            headers= headers 
         )
 
     except subprocess.CalledProcessError as e:
