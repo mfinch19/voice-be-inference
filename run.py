@@ -2,11 +2,9 @@ import os
 import sys
 import re
 import argparse
-from easy_functions import (format_time,
-                            get_input_length,
-                            get_video_details,
-                            show_video,
-                            g_colab)
+from easy_functions import (
+    format_time, get_input_length, get_video_details, show_video, g_colab
+)
 import contextlib
 import shutil
 import subprocess
